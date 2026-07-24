@@ -400,7 +400,13 @@
         <svg viewBox="0 0 940 360" role="img" aria-label="Interaktives Notensystem">
           <rect width="940" height="360" fill="transparent"></rect>
 
-          <text id="clefSymbol" x="62" y="247" font-size="165" font-family="Georgia, serif" fill="#252933">𝄞</text>
+          <text id="clefSymbol"
+                x="92" y="170"
+                text-anchor="middle"
+                dominant-baseline="middle"
+                font-size="150"
+                font-family="Noto Music, Bravura Text, Segoe UI Symbol, Georgia, serif"
+                fill="#252933">𝄞</text>
 
           <g id="staffLines" stroke="#252933" stroke-width="3">
             <line x1="175" y1="100" x2="865" y2="100"/>
@@ -465,30 +471,30 @@
       treble: {
         label: "Violinschlüssel",
         symbol: "𝄞",
-        x: 62,
-        y: 247,
-        fontSize: 165,
-        // Der G-Schlüssel markiert G4 auf der zweiten Linie von unten.
+        x: 92,
+        y: 170,
+        fontSize: 150,
+        // Der G-Schlüssel umschließt G4 auf der zweiten Linie von unten.
         reference: { name: "G", octave: 4, y: 205 },
         startOctave: 4
       },
       bass: {
         label: "Bassschlüssel",
         symbol: "𝄢",
-        x: 70,
-        y: 220,
-        fontSize: 125,
-        // Der F-Schlüssel markiert F3 auf der zweiten Linie von oben.
+        x: 98,
+        y: 170,
+        fontSize: 122,
+        // Die beiden Punkte des F-Schlüssels liegen um F3 (zweite Linie von oben).
         reference: { name: "F", octave: 3, y: 135 },
         startOctave: 2
       },
       alto: {
         label: "Bratschenschlüssel",
         symbol: "𝄡",
-        x: 66,
-        y: 225,
-        fontSize: 145,
-        // Der Altschlüssel markiert C4 auf der mittleren Linie.
+        x: 94,
+        y: 170,
+        fontSize: 132,
+        // Die Mitte des C-Schlüssels liegt auf C4 (Mittellinie).
         reference: { name: "C", octave: 4, y: 170 },
         startOctave: 3
       }
@@ -550,6 +556,8 @@
       clefSymbol.setAttribute("x", clef.x);
       clefSymbol.setAttribute("y", clef.y);
       clefSymbol.setAttribute("font-size", clef.fontSize);
+      clefSymbol.setAttribute("text-anchor", "middle");
+      clefSymbol.setAttribute("dominant-baseline", "middle");
     }
 
     function renderKeySignature() {
@@ -559,16 +567,18 @@
 
       // Traditionelle Reihenfolge und Lage der Tonartvorzeichen je Schlüssel.
       const signatureY = {
+        // Werte sind die optischen Mittelpunkte der Vorzeichen.
+        // Reihenfolge: Kreuze F-C-G-D-A, Be-Vorzeichen H-E-A-D-G.
         treble: {
           sharp: [100, 152.5, 82.5, 135, 187.5],
-          flat:  [187.5, 135, 205, 152.5, 222.5]
+          flat:  [170, 117.5, 187.5, 135, 205]
         },
         bass: {
-          sharp: [135, 187.5, 117.5, 170, 222.5],
+          sharp: [135, 187.5, 117.5, 170, 100],
           flat:  [205, 152.5, 222.5, 170, 240]
         },
         alto: {
-          sharp: [117.5, 170, 100, 152.5, 205],
+          sharp: [117.5, 170, 100, 152.5, 82.5],
           flat:  [187.5, 135, 205, 152.5, 222.5]
         }
       };
@@ -578,10 +588,12 @@
 
       for (let i = 0; i < key.count; i++) {
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", 205 + i * 34);
+        text.setAttribute("x", 212 + i * 31);
         text.setAttribute("y", positions[i]);
-        text.setAttribute("font-size", key.type === "sharp" ? 44 : 48);
-        text.setAttribute("font-family", "Georgia, serif");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("font-size", key.type === "sharp" ? 42 : 46);
+        text.setAttribute("font-family", "Noto Music, Bravura Text, Segoe UI Symbol, Georgia, serif");
         text.setAttribute("fill", "#252933");
         text.textContent = sign;
         keySignature.appendChild(text);
