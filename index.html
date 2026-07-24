@@ -304,13 +304,6 @@
       line-height: 1.55;
     }
 
-    .footer {
-      margin-top: 15px;
-      text-align: center;
-      color: var(--muted);
-      font-size: .88rem;
-    }
-
     @media (max-width: 900px) {
       .controls { grid-template-columns: repeat(2, 1fr); }
       .answers { grid-template-columns: repeat(4, 1fr); }
@@ -448,7 +441,6 @@
       </div>
     </section>
 
-    <div class="footer">Läuft direkt über GitHub Pages und kann in Google Sites eingebettet werden.</div>
   </main>
 
   <script>
@@ -456,17 +448,17 @@
     const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, H: 11 };
 
     const KEY_SIGNATURES = {
-      "0":  { label: "C-Dur / a-Moll", type: "none", count: 0, altered: {} },
-      "1s": { label: "G-Dur / e-Moll", type: "sharp", count: 1, altered: { F: 1 } },
-      "2s": { label: "D-Dur / h-Moll", type: "sharp", count: 2, altered: { F: 1, C: 1 } },
-      "3s": { label: "A-Dur / fis-Moll", type: "sharp", count: 3, altered: { F: 1, C: 1, G: 1 } },
-      "4s": { label: "E-Dur / cis-Moll", type: "sharp", count: 4, altered: { F: 1, C: 1, G: 1, D: 1 } },
-      "5s": { label: "H-Dur / gis-Moll", type: "sharp", count: 5, altered: { F: 1, C: 1, G: 1, D: 1, A: 1 } },
-      "1f": { label: "F-Dur / d-Moll", type: "flat", count: 1, altered: { H: -1 } },
-      "2f": { label: "B-Dur / g-Moll", type: "flat", count: 2, altered: { H: -1, E: -1 } },
-      "3f": { label: "Es-Dur / c-Moll", type: "flat", count: 3, altered: { H: -1, E: -1, A: -1 } },
-      "4f": { label: "As-Dur / f-Moll", type: "flat", count: 4, altered: { H: -1, E: -1, A: -1, D: -1 } },
-      "5f": { label: "Des-Dur / b-Moll", type: "flat", count: 5, altered: { H: -1, E: -1, A: -1, D: -1, G: -1 } }
+      "0":  { label: "C-Dur / a-Moll", tonic: "C", type: "none", count: 0, altered: {} },
+      "1s": { label: "G-Dur / e-Moll", tonic: "G", type: "sharp", count: 1, altered: { F: 1 } },
+      "2s": { label: "D-Dur / h-Moll", tonic: "D", type: "sharp", count: 2, altered: { F: 1, C: 1 } },
+      "3s": { label: "A-Dur / fis-Moll", tonic: "A", type: "sharp", count: 3, altered: { F: 1, C: 1, G: 1 } },
+      "4s": { label: "E-Dur / cis-Moll", tonic: "E", type: "sharp", count: 4, altered: { F: 1, C: 1, G: 1, D: 1 } },
+      "5s": { label: "H-Dur / gis-Moll", tonic: "H", type: "sharp", count: 5, altered: { F: 1, C: 1, G: 1, D: 1, A: 1 } },
+      "1f": { label: "F-Dur / d-Moll", tonic: "F", type: "flat", count: 1, altered: { H: -1 } },
+      "2f": { label: "B-Dur / g-Moll", tonic: "H", type: "flat", count: 2, altered: { H: -1, E: -1 } },
+      "3f": { label: "Es-Dur / c-Moll", tonic: "E", type: "flat", count: 3, altered: { H: -1, E: -1, A: -1 } },
+      "4f": { label: "As-Dur / f-Moll", tonic: "A", type: "flat", count: 4, altered: { H: -1, E: -1, A: -1, D: -1 } },
+      "5f": { label: "Des-Dur / b-Moll", tonic: "D", type: "flat", count: 5, altered: { H: -1, E: -1, A: -1, D: -1, G: -1 } }
     };
 
     const CLEFS = {
@@ -476,7 +468,9 @@
         x: 62,
         y: 247,
         fontSize: 165,
-        reference: { name: "E", octave: 4, y: 240 }
+        // Der G-Schlüssel markiert G4 auf der zweiten Linie von unten.
+        reference: { name: "G", octave: 4, y: 205 },
+        startOctave: 4
       },
       bass: {
         label: "Bassschlüssel",
@@ -484,7 +478,9 @@
         x: 70,
         y: 220,
         fontSize: 125,
-        reference: { name: "G", octave: 2, y: 240 }
+        // Der F-Schlüssel markiert F3 auf der zweiten Linie von oben.
+        reference: { name: "F", octave: 3, y: 135 },
+        startOctave: 2
       },
       alto: {
         label: "Bratschenschlüssel",
@@ -492,7 +488,9 @@
         x: 66,
         y: 225,
         fontSize: 145,
-        reference: { name: "F", octave: 3, y: 240 }
+        // Der Altschlüssel markiert C4 auf der mittleren Linie.
+        reference: { name: "C", octave: 4, y: 170 },
+        startOctave: 3
       }
     };
 
@@ -559,23 +557,29 @@
       const key = KEY_SIGNATURES[keySelect.value];
       if (key.count === 0) return;
 
-      const sharpTreble = [100, 152.5, 82.5, 135, 187.5];
-      const flatTreble = [187.5, 135, 205, 152.5, 222.5];
-
-      const clefOffsets = {
-        treble: 0,
-        bass: 17.5,
-        alto: -17.5
+      // Traditionelle Reihenfolge und Lage der Tonartvorzeichen je Schlüssel.
+      const signatureY = {
+        treble: {
+          sharp: [100, 152.5, 82.5, 135, 187.5],
+          flat:  [187.5, 135, 205, 152.5, 222.5]
+        },
+        bass: {
+          sharp: [135, 187.5, 117.5, 170, 222.5],
+          flat:  [205, 152.5, 222.5, 170, 240]
+        },
+        alto: {
+          sharp: [117.5, 170, 100, 152.5, 205],
+          flat:  [187.5, 135, 205, 152.5, 222.5]
+        }
       };
 
-      const base = key.type === "sharp" ? sharpTreble : flatTreble;
+      const positions = signatureY[clefSelect.value][key.type];
       const sign = key.type === "sharp" ? "♯" : "♭";
-      const offset = clefOffsets[clefSelect.value];
 
       for (let i = 0; i < key.count; i++) {
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", 205 + i * 34);
-        text.setAttribute("y", base[i] + offset);
+        text.setAttribute("y", positions[i]);
         text.setAttribute("font-size", key.type === "sharp" ? 44 : 48);
         text.setAttribute("font-family", "Georgia, serif");
         text.setAttribute("fill", "#252933");
@@ -633,8 +637,10 @@
     function buildAnswerButtons() {
       answerButtons.innerHTML = "";
       const range = Number(rangeSelect.value);
-      const centerOctave = CLEFS[clefSelect.value].reference.octave + 1 + octaveShift;
-      const startIndex = diatonicIndex("C", centerOctave) - Math.floor(range / 2);
+      const clef = CLEFS[clefSelect.value];
+      const tonic = KEY_SIGNATURES[keySelect.value].tonic;
+      const startOctave = clef.startOctave + octaveShift;
+      const startIndex = diatonicIndex(tonic, startOctave);
 
       for (let i = 0; i < range; i++) {
         const absolute = startIndex + i;
@@ -808,8 +814,12 @@
     keySelect.addEventListener("change", () => {
       renderKeySignature();
       buildAnswerButtons();
+      currentNote = {
+        name: KEY_SIGNATURES[keySelect.value].tonic,
+        octave: CLEFS[clefSelect.value].startOctave + octaveShift
+      };
       renderNote();
-      feedback.textContent = `${KEY_SIGNATURES[keySelect.value].label} ausgewählt.`;
+      feedback.textContent = `${KEY_SIGNATURES[keySelect.value].label} ausgewählt. Die Reihe beginnt beim Grundton ${pitchLabel(currentNote)}.`;
       feedback.className = "feedback info";
     });
 
