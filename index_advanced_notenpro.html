@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Fortgeschrittene interaktive Notenlern-App mit verschiedenen Schlüsseln, Tonarten und Oktavtransposition" />
+  <title>NotenPro – Schlüssel, Tonarten und Transposition</title>
+
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #20242c;
+      --muted: #6b7280;
+      --primary: #5754df;
+      --primary-dark: #403dc2;
+      --success: #168a5b;
+      --error: #d64545;
+      --warning: #c47b10;
+      --soft: #ececfb;
+      --line: #252933;
+      --shadow: 0 14px 36px rgba(35, 38, 50, 0.12);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-rounded, "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #e9e7ff 0, transparent 34%),
+        radial-gradient(circle at bottom right, #e2f6ef 0, transparent 30%),
+        var(--bg);
+    }
+
+    button, select { font: inherit; }
+
+    .app {
+      width: min(1180px, calc(100% - 26px));
+      margin: 0 auto;
+      padding: 22px 0 42px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.9rem, 4vw, 3.15rem);
+      line-height: 1;
+    }
+
+    .hero p {
+      margin: 9px 0 0;
+      color: var(--muted);
+    }
+
+    .badge {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .card {
+      padding: clamp(17px, 3vw, 30px);
+      background: rgba(255,255,255,.96);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .control {
+      padding: 12px;
+      background: #f8f9fc;
+      border: 1px solid #e8eaf1;
+      border-radius: 15px;
+    }
+
+    .control label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: .88rem;
+      font-weight: 800;
+    }
+
+    .control select,
+    .control button {
+      width: 100%;
+      min-height: 43px;
+      border: 1px solid #d8dbe7;
+      border-radius: 11px;
+      background: white;
+      color: var(--text);
+      padding: 9px 11px;
+      cursor: pointer;
+      font-weight: 750;
+    }
+
+    .transpose-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .transpose-row button {
+      color: var(--primary-dark);
+      background: #f0efff;
+      border-color: #dcdbff;
+    }
+
+    .modebar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tabs {
+      display: inline-flex;
+      padding: 4px;
+      background: var(--soft);
+      border-radius: 14px;
+    }
+
+    .tab {
+      border: 0;
+      padding: 10px 16px;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 850;
+    }
+
+    .tab.active {
+      color: var(--primary);
+      background: white;
+      box-shadow: 0 3px 12px rgba(38,40,80,.12);
+    }
+
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .status-chip {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #f2f3f8;
+    }
+
+    .status strong { color: var(--text); }
+
+    .instruction {
+      min-height: 28px;
+      margin: 6px 0 10px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .staff-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      max-width: 890px;
+      min-height: 340px;
+      margin: 10px auto 20px;
+      overflow: hidden;
+      border: 1px solid #eceef5;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff, #fbfbff);
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .note-label {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: #efefff;
+      color: var(--primary-dark);
+      font-weight: 900;
+      opacity: 0;
+      transition: opacity .18s ease;
+      pointer-events: none;
+    }
+
+    .note-label.show { opacity: 1; }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(65px, 1fr));
+      gap: 9px;
+      max-width: 890px;
+      margin: 0 auto;
+    }
+
+    .answer {
+      min-height: 53px;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      background: #f2f3f8;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.03rem;
+      font-weight: 900;
+      transition: .15s ease;
+    }
+
+    .answer:hover {
+      transform: translateY(-2px);
+      background: #e9e8ff;
+    }
+
+    .answer.correct {
+      color: var(--success);
+      border-color: var(--success);
+      background: #dcf6ea;
+    }
+
+    .answer.wrong {
+      color: var(--error);
+      border-color: var(--error);
+      background: #fde5e5;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: 0;
+      padding: 12px 17px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 850;
+    }
+
+    .btn-primary {
+      color: white;
+      background: var(--primary);
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-secondary {
+      color: var(--text);
+      background: #eef0f6;
+    }
+
+    .feedback {
+      min-height: 30px;
+      margin-top: 13px;
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .feedback.ok { color: var(--success); }
+    .feedback.bad { color: var(--error); }
+    .feedback.info { color: var(--warning); }
+
+    .explain {
+      margin-top: 18px;
+      padding: 15px 17px;
+      border-left: 5px solid var(--primary);
+      border-radius: 12px;
+      background: #f6f6ff;
+      color: #4b5060;
+      line-height: 1.55;
+    }
+
+    .footer {
+      margin-top: 15px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: repeat(2, 1fr); }
+      .answers { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (max-width: 620px) {
+      .hero {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .controls { grid-template-columns: 1fr; }
+      .staff-wrap { min-height: 250px; }
+    }
+
+    @media (max-width: 390px) {
+      .answers { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <h1>🎼 NotenPro</h1>
+        <p>Schlüssel, Tonarten, Vorzeichen und Oktavtransposition trainieren.</p>
+      </div>
+      <div class="badge">Advanced · interaktiv</div>
+    </header>
+
+    <section class="card">
+      <div class="controls">
+        <div class="control">
+          <label for="clefSelect">Schlüssel</label>
+          <select id="clefSelect">
+            <option value="treble">Violinschlüssel</option>
+            <option value="bass">Bassschlüssel</option>
+            <option value="alto">Bratschenschlüssel</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label for="keySelect">Tonart / Vorzeichen</label>
+          <select id="keySelect">
+            <option value="0">C-Dur / a-Moll · 0</option>
+            <option value="1s">G-Dur / e-Moll · 1♯</option>
+            <option value="2s">D-Dur / h-Moll · 2♯</option>
+            <option value="3s">A-Dur / fis-Moll · 3♯</option>
+            <option value="4s">E-Dur / cis-Moll · 4♯</option>
+            <option value="5s">H-Dur / gis-Moll · 5♯</option>
+            <option value="1f">F-Dur / d-Moll · 1♭</option>
+            <option value="2f">B-Dur / g-Moll · 2♭</option>
+            <option value="3f">Es-Dur / c-Moll · 3♭</option>
+            <option value="4f">As-Dur / f-Moll · 4♭</option>
+            <option value="5f">Des-Dur / b-Moll · 5♭</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label>Oktavlage</label>
+          <div class="transpose-row">
+            <button id="octaveDown">− Oktave</button>
+            <button id="octaveUp">+ Oktave</button>
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="rangeSelect">Übungsumfang</label>
+          <select id="rangeSelect">
+            <option value="7">7 Stammtöne</option>
+            <option value="14" selected>2 Oktaven</option>
+            <option value="21">3 Oktaven</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modebar">
+        <div class="tabs" role="tablist">
+          <button id="learnTab" class="tab active" aria-selected="true">Lernen</button>
+          <button id="quizTab" class="tab" aria-selected="false">Quiz</button>
+        </div>
+
+        <div class="status">
+          <span class="status-chip">Punkte: <strong id="score">0</strong></span>
+          <span class="status-chip">Oktave: <strong id="octaveDisplay">0</strong></span>
+          <span class="status-chip">Ton: <strong id="pitchDisplay">C4</strong></span>
+        </div>
+      </div>
+
+      <h2 id="instruction" class="instruction">Wähle einen Notennamen oder ändere Schlüssel und Tonart.</h2>
+
+      <div class="staff-wrap">
+        <svg viewBox="0 0 940 360" role="img" aria-label="Interaktives Notensystem">
+          <rect width="940" height="360" fill="transparent"></rect>
+
+          <text id="clefSymbol" x="62" y="247" font-size="165" font-family="Georgia, serif" fill="#252933">𝄞</text>
+
+          <g id="staffLines" stroke="#252933" stroke-width="3">
+            <line x1="175" y1="100" x2="865" y2="100"/>
+            <line x1="175" y1="135" x2="865" y2="135"/>
+            <line x1="175" y1="170" x2="865" y2="170"/>
+            <line x1="175" y1="205" x2="865" y2="205"/>
+            <line x1="175" y1="240" x2="865" y2="240"/>
+          </g>
+
+          <g id="keySignature"></g>
+          <g id="ledgerLines"></g>
+
+          <g id="noteGroup" transform="translate(590 240)">
+            <ellipse cx="0" cy="0" rx="22" ry="15" transform="rotate(-18)" fill="#5754df"/>
+            <line id="stem" x1="19" y1="-5" x2="19" y2="-92"
+                  stroke="#5754df" stroke-width="5" stroke-linecap="round"/>
+          </g>
+        </svg>
+
+        <div id="noteLabel" class="note-label">C4</div>
+      </div>
+
+      <div id="answerButtons" class="answers"></div>
+
+      <div class="actions">
+        <button id="playButton" class="btn btn-secondary">🔊 Ton anhören</button>
+        <button id="randomButton" class="btn btn-primary">Neue Note</button>
+        <button id="resetButton" class="btn btn-secondary">Zurücksetzen</button>
+      </div>
+
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+
+      <div class="explain">
+        <strong>Hinweis:</strong>
+        Die Tonart verändert die klingende Tonhöhe. Bei G-Dur wird zum Beispiel jedes F als Fis gespielt.
+        Die Schaltflächen „± Oktave“ verschieben die aktuelle Note um genau zwölf Halbtöne.
+        Im Quiz werden Notenname und Oktavlage geprüft.
+      </div>
+    </section>
+
+    <div class="footer">Läuft direkt über GitHub Pages und kann in Google Sites eingebettet werden.</div>
+  </main>
+
+  <script>
+    const NOTE_NAMES = ["C", "D", "E", "F", "G", "A", "H"];
+    const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, H: 11 };
+
+    const KEY_SIGNATURES = {
+      "0":  { label: "C-Dur / a-Moll", type: "none", count: 0, altered: {} },
+      "1s": { label: "G-Dur / e-Moll", type: "sharp", count: 1, altered: { F: 1 } },
+      "2s": { label: "D-Dur / h-Moll", type: "sharp", count: 2, altered: { F: 1, C: 1 } },
+      "3s": { label: "A-Dur / fis-Moll", type: "sharp", count: 3, altered: { F: 1, C: 1, G: 1 } },
+      "4s": { label: "E-Dur / cis-Moll", type: "sharp", count: 4, altered: { F: 1, C: 1, G: 1, D: 1 } },
+      "5s": { label: "H-Dur / gis-Moll", type: "sharp", count: 5, altered: { F: 1, C: 1, G: 1, D: 1, A: 1 } },
+      "1f": { label: "F-Dur / d-Moll", type: "flat", count: 1, altered: { H: -1 } },
+      "2f": { label: "B-Dur / g-Moll", type: "flat", count: 2, altered: { H: -1, E: -1 } },
+      "3f": { label: "Es-Dur / c-Moll", type: "flat", count: 3, altered: { H: -1, E: -1, A: -1 } },
+      "4f": { label: "As-Dur / f-Moll", type: "flat", count: 4, altered: { H: -1, E: -1, A: -1, D: -1 } },
+      "5f": { label: "Des-Dur / b-Moll", type: "flat", count: 5, altered: { H: -1, E: -1, A: -1, D: -1, G: -1 } }
+    };
+
+    const CLEFS = {
+      treble: {
+        label: "Violinschlüssel",
+        symbol: "𝄞",
+        x: 62,
+        y: 247,
+        fontSize: 165,
+        reference: { name: "E", octave: 4, y: 240 }
+      },
+      bass: {
+        label: "Bassschlüssel",
+        symbol: "𝄢",
+        x: 70,
+        y: 220,
+        fontSize: 125,
+        reference: { name: "G", octave: 2, y: 240 }
+      },
+      alto: {
+        label: "Bratschenschlüssel",
+        symbol: "𝄡",
+        x: 66,
+        y: 225,
+        fontSize: 145,
+        reference: { name: "F", octave: 3, y: 240 }
+      }
+    };
+
+    let mode = "learn";
+    let score = 0;
+    let locked = false;
+    let octaveShift = 0;
+    let currentNote = { name: "C", octave: 4 };
+
+    const clefSelect = document.getElementById("clefSelect");
+    const keySelect = document.getElementById("keySelect");
+    const rangeSelect = document.getElementById("rangeSelect");
+    const clefSymbol = document.getElementById("clefSymbol");
+    const keySignature = document.getElementById("keySignature");
+    const ledgerLines = document.getElementById("ledgerLines");
+    const noteGroup = document.getElementById("noteGroup");
+    const stem = document.getElementById("stem");
+    const noteLabel = document.getElementById("noteLabel");
+    const pitchDisplay = document.getElementById("pitchDisplay");
+    const octaveDisplay = document.getElementById("octaveDisplay");
+    const scoreEl = document.getElementById("score");
+    const feedback = document.getElementById("feedback");
+    const answerButtons = document.getElementById("answerButtons");
+    const instruction = document.getElementById("instruction");
+    const learnTab = document.getElementById("learnTab");
+    const quizTab = document.getElementById("quizTab");
+
+    function diatonicIndex(name, octave) {
+      return octave * 7 + NOTE_NAMES.indexOf(name);
+    }
+
+    function noteY(note) {
+      const clef = CLEFS[clefSelect.value];
+      const ref = clef.reference;
+      const steps = diatonicIndex(note.name, note.octave) - diatonicIndex(ref.name, ref.octave);
+      return ref.y - steps * 17.5;
+    }
+
+    function pitchLabel(note) {
+      const accidental = KEY_SIGNATURES[keySelect.value].altered[note.name] || 0;
+      const symbol = accidental === 1 ? "♯" : accidental === -1 ? "♭" : "";
+      return `${note.name}${symbol}${note.octave}`;
+    }
+
+    function midiNumber(note) {
+      const accidental = KEY_SIGNATURES[keySelect.value].altered[note.name] || 0;
+      return 12 * (note.octave + 1) + SEMITONES[note.name] + accidental;
+    }
+
+    function frequency(note) {
+      return 440 * Math.pow(2, (midiNumber(note) - 69) / 12);
+    }
+
+    function renderClef() {
+      const clef = CLEFS[clefSelect.value];
+      clefSymbol.textContent = clef.symbol;
+      clefSymbol.setAttribute("x", clef.x);
+      clefSymbol.setAttribute("y", clef.y);
+      clefSymbol.setAttribute("font-size", clef.fontSize);
+    }
+
+    function renderKeySignature() {
+      keySignature.innerHTML = "";
+      const key = KEY_SIGNATURES[keySelect.value];
+      if (key.count === 0) return;
+
+      const sharpTreble = [100, 152.5, 82.5, 135, 187.5];
+      const flatTreble = [187.5, 135, 205, 152.5, 222.5];
+
+      const clefOffsets = {
+        treble: 0,
+        bass: 17.5,
+        alto: -17.5
+      };
+
+      const base = key.type === "sharp" ? sharpTreble : flatTreble;
+      const sign = key.type === "sharp" ? "♯" : "♭";
+      const offset = clefOffsets[clefSelect.value];
+
+      for (let i = 0; i < key.count; i++) {
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", 205 + i * 34);
+        text.setAttribute("y", base[i] + offset);
+        text.setAttribute("font-size", key.type === "sharp" ? 44 : 48);
+        text.setAttribute("font-family", "Georgia, serif");
+        text.setAttribute("fill", "#252933");
+        text.textContent = sign;
+        keySignature.appendChild(text);
+      }
+    }
+
+    function renderLedgerLines(y) {
+      ledgerLines.innerHTML = "";
+      const top = 100;
+      const bottom = 240;
+
+      const makeLine = (lineY) => {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", 548);
+        line.setAttribute("x2", 632);
+        line.setAttribute("y1", lineY);
+        line.setAttribute("y2", lineY);
+        line.setAttribute("stroke", "#252933");
+        line.setAttribute("stroke-width", 3);
+        ledgerLines.appendChild(line);
+      };
+
+      if (y > bottom) {
+        for (let ly = bottom + 35; ly <= y + 1; ly += 35) makeLine(ly);
+      } else if (y < top) {
+        for (let ly = top - 35; ly >= y - 1; ly -= 35) makeLine(ly);
+      }
+    }
+
+    function renderNote() {
+      const y = noteY(currentNote);
+      noteGroup.setAttribute("transform", `translate(590 ${y})`);
+
+      if (y < 170) {
+        stem.setAttribute("x1", -19);
+        stem.setAttribute("x2", -19);
+        stem.setAttribute("y1", 5);
+        stem.setAttribute("y2", 92);
+      } else {
+        stem.setAttribute("x1", 19);
+        stem.setAttribute("x2", 19);
+        stem.setAttribute("y1", -5);
+        stem.setAttribute("y2", -92);
+      }
+
+      renderLedgerLines(y);
+      const label = pitchLabel(currentNote);
+      noteLabel.textContent = label;
+      pitchDisplay.textContent = label;
+      noteLabel.classList.toggle("show", mode === "learn");
+    }
+
+    function buildAnswerButtons() {
+      answerButtons.innerHTML = "";
+      const range = Number(rangeSelect.value);
+      const centerOctave = CLEFS[clefSelect.value].reference.octave + 1 + octaveShift;
+      const startIndex = diatonicIndex("C", centerOctave) - Math.floor(range / 2);
+
+      for (let i = 0; i < range; i++) {
+        const absolute = startIndex + i;
+        const octave = Math.floor(absolute / 7);
+        const name = NOTE_NAMES[((absolute % 7) + 7) % 7];
+        const note = { name, octave };
+
+        const button = document.createElement("button");
+        button.className = "answer";
+        button.dataset.name = name;
+        button.dataset.octave = octave;
+        button.textContent = pitchLabel(note);
+        button.addEventListener("click", () => chooseNote(note, button));
+        answerButtons.appendChild(button);
+      }
+    }
+
+    function chooseNote(note, button) {
+      if (locked) return;
+
+      if (mode === "learn") {
+        currentNote = note;
+        renderNote();
+        noteLabel.classList.add("show");
+        feedback.textContent = `Das ist ${pitchLabel(note)} im ${CLEFS[clefSelect.value].label}.`;
+        feedback.className = "feedback ok";
+        playTone(frequency(note));
+        return;
+      }
+
+      locked = true;
+      const correct = note.name === currentNote.name && note.octave === currentNote.octave;
+
+      if (correct) {
+        score++;
+        scoreEl.textContent = score;
+        button.classList.add("correct");
+        feedback.textContent = "Richtig!";
+        feedback.className = "feedback ok";
+        playTone(frequency(currentNote));
+      } else {
+        button.classList.add("wrong");
+        feedback.textContent = `Richtig wäre ${pitchLabel(currentNote)}.`;
+        feedback.className = "feedback bad";
+
+        document.querySelectorAll(".answer").forEach(answer => {
+          if (answer.dataset.name === currentNote.name &&
+              Number(answer.dataset.octave) === currentNote.octave) {
+            answer.classList.add("correct");
+          }
+        });
+      }
+
+      document.querySelectorAll(".answer").forEach(answer => answer.disabled = true);
+    }
+
+    function randomNote() {
+      buildAnswerButtons();
+      const buttons = [...document.querySelectorAll(".answer")];
+      const candidates = buttons.map(button => ({
+        name: button.dataset.name,
+        octave: Number(button.dataset.octave)
+      }));
+
+      let next;
+      do {
+        next = candidates[Math.floor(Math.random() * candidates.length)];
+      } while (
+        candidates.length > 1 &&
+        next.name === currentNote.name &&
+        next.octave === currentNote.octave
+      );
+
+      currentNote = next;
+      locked = false;
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      buttons.forEach(button => button.disabled = false);
+      renderNote();
+    }
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      score = 0;
+      scoreEl.textContent = score;
+      locked = false;
+
+      const learning = mode === "learn";
+      learnTab.classList.toggle("active", learning);
+      quizTab.classList.toggle("active", !learning);
+      learnTab.setAttribute("aria-selected", String(learning));
+      quizTab.setAttribute("aria-selected", String(!learning));
+
+      instruction.textContent = learning
+        ? "Wähle einen Notennamen oder ändere Schlüssel und Tonart."
+        : "Welche Note siehst du? Achte auf Schlüssel, Tonart und Oktavlage.";
+
+      buildAnswerButtons();
+      randomNote();
+    }
+
+    function transposeOctave(direction) {
+      octaveShift += direction;
+      octaveShift = Math.max(-2, Math.min(2, octaveShift));
+      octaveDisplay.textContent = octaveShift > 0 ? `+${octaveShift}` : octaveShift;
+
+      currentNote = {
+        name: currentNote.name,
+        octave: currentNote.octave + direction
+      };
+
+      buildAnswerButtons();
+      renderNote();
+      feedback.textContent = direction > 0
+        ? "Eine Oktave nach oben transponiert."
+        : "Eine Oktave nach unten transponiert.";
+      feedback.className = "feedback info";
+      locked = false;
+    }
+
+    function resetApp() {
+      clefSelect.value = "treble";
+      keySelect.value = "0";
+      rangeSelect.value = "14";
+      octaveShift = 0;
+      octaveDisplay.textContent = "0";
+      currentNote = { name: "C", octave: 4 };
+      score = 0;
+      scoreEl.textContent = "0";
+      renderClef();
+      renderKeySignature();
+      buildAnswerButtons();
+      renderNote();
+      feedback.textContent = "Einstellungen zurückgesetzt.";
+      feedback.className = "feedback info";
+    }
+
+    function playTone(freq) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) {
+        feedback.textContent = "Dieser Browser unterstützt keine Tonwiedergabe.";
+        feedback.className = "feedback bad";
+        return;
+      }
+
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.9);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.95);
+      osc.addEventListener("ended", () => ctx.close());
+    }
+
+    clefSelect.addEventListener("change", () => {
+      renderClef();
+      renderKeySignature();
+      buildAnswerButtons();
+      randomNote();
+    });
+
+    keySelect.addEventListener("change", () => {
+      renderKeySignature();
+      buildAnswerButtons();
+      renderNote();
+      feedback.textContent = `${KEY_SIGNATURES[keySelect.value].label} ausgewählt.`;
+      feedback.className = "feedback info";
+    });
+
+    rangeSelect.addEventListener("change", () => {
+      buildAnswerButtons();
+      randomNote();
+    });
+
+    document.getElementById("octaveDown").addEventListener("click", () => transposeOctave(-1));
+    document.getElementById("octaveUp").addEventListener("click", () => transposeOctave(1));
+    document.getElementById("playButton").addEventListener("click", () => playTone(frequency(currentNote)));
+    document.getElementById("randomButton").addEventListener("click", randomNote);
+    document.getElementById("resetButton").addEventListener("click", resetApp);
+    learnTab.addEventListener("click", () => setMode("learn"));
+    quizTab.addEventListener("click", () => setMode("quiz"));
+
+    renderClef();
+    renderKeySignature();
+    buildAnswerButtons();
+    renderNote();
+  </script>
+</body>
+</html>
