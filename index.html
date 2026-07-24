@@ -390,7 +390,7 @@
         <div class="status">
           <span class="status-chip">Punkte: <strong id="score">0</strong></span>
           <span class="status-chip">Oktave: <strong id="octaveDisplay">0</strong></span>
-          <span class="status-chip">Ton: <strong id="pitchDisplay">C4</strong></span>
+          <span class="status-chip">Ton: <strong id="pitchDisplay">c'</strong></span>
         </div>
       </div>
 
@@ -401,10 +401,9 @@
           <rect width="940" height="360" fill="transparent"></rect>
 
           <text id="clefSymbol"
-                x="132" y="170"
+                x="132" y="247"
                 text-anchor="middle"
-                dominant-baseline="middle"
-                font-size="150"
+                font-size="165"
                 font-family="Noto Music, Bravura Text, Segoe UI Symbol, Georgia, serif"
                 fill="#252933">𝄞</text>
 
@@ -426,7 +425,7 @@
           </g>
         </svg>
 
-        <div id="noteLabel" class="note-label">C4</div>
+        <div id="noteLabel" class="note-label">c'</div>
       </div>
 
       <div id="answerButtons" class="answers"></div>
@@ -472,8 +471,8 @@
         label: "Violinschlüssel",
         symbol: "𝄞",
         x: 132,
-        y: 170,
-        fontSize: 150,
+        y: 247,
+        fontSize: 165,
         // Der G-Schlüssel umschließt G4 auf der zweiten Linie von unten.
         reference: { name: "G", octave: 4, y: 205 },
         startOctave: 4
@@ -482,8 +481,8 @@
         label: "Bassschlüssel",
         symbol: "𝄢",
         x: 132,
-        y: 170,
-        fontSize: 122,
+        y: 220,
+        fontSize: 125,
         // Die beiden Punkte des F-Schlüssels liegen um F3 (zweite Linie von oben).
         reference: { name: "F", octave: 3, y: 135 },
         startOctave: 2
@@ -492,8 +491,8 @@
         label: "Bratschenschlüssel",
         symbol: "𝄡",
         x: 132,
-        y: 170,
-        fontSize: 132,
+        y: 225,
+        fontSize: 145,
         // Die Mitte des C-Schlüssels liegt auf C4 (Mittellinie).
         reference: { name: "C", octave: 4, y: 170 },
         startOctave: 3
@@ -537,8 +536,30 @@
 
     function pitchLabel(note) {
       const accidental = KEY_SIGNATURES[keySelect.value].altered[note.name] || 0;
-      const symbol = accidental === 1 ? "♯" : accidental === -1 ? "♭" : "";
-      return `${note.name}${symbol}${note.octave}`;
+
+      // Deutsche Tonbezeichnungen: cis, fis, es, as und B statt H♭.
+      const sharpNames = { C: "cis", D: "dis", E: "eis", F: "fis", G: "gis", A: "ais", H: "his" };
+      const flatNames = { C: "ces", D: "des", E: "es", F: "fes", G: "ges", A: "as", H: "b" };
+
+      let name;
+      if (accidental === 1) {
+        name = sharpNames[note.name];
+      } else if (accidental === -1) {
+        name = flatNames[note.name];
+      } else {
+        name = note.name.toLowerCase();
+      }
+
+      // Deutsche Oktavschreibweise (Helmholtz):
+      // C4 = c', C5 = c'', C3 = c, C2 = C, C1 = C, usw.
+      if (note.octave >= 4) {
+        return name.toLowerCase() + "'".repeat(note.octave - 3);
+      }
+
+      const upperName = name === "b" ? "B" : name.charAt(0).toUpperCase() + name.slice(1);
+      if (note.octave === 3) return name.toLowerCase();
+      if (note.octave === 2) return upperName;
+      return upperName + ",".repeat(Math.max(1, 2 - note.octave));
     }
 
     function midiNumber(note) {
@@ -557,7 +578,7 @@
       clefSymbol.setAttribute("y", clef.y);
       clefSymbol.setAttribute("font-size", clef.fontSize);
       clefSymbol.setAttribute("text-anchor", "middle");
-      clefSymbol.setAttribute("dominant-baseline", "middle");
+      clefSymbol.removeAttribute("dominant-baseline");
     }
 
     function renderKeySignature() {
